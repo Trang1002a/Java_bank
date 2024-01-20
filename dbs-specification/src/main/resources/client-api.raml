@@ -1,0 +1,35 @@
+#%RAML 1.0
+---
+#==================================================================
+# References:
+#   - RAML Specifications: https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md
+#==================================================================
+title: Test Resource API Spec
+version: v1
+baseUri: http://localhost:8888/project/v1
+mediaType: application/json
+
+/customer:
+  displayName: Auth
+  /get-all:
+    get:
+      displayName: getAllUser
+      description: get all user
+      responses:
+        200:
+          body:
+            application/json:
+              schema: !include schemas/response/user/get-all.json
+/auth:
+  displayName: Auth
+  /login:
+    post:
+      displayName: postLogin
+      body:
+        application/json:
+          schema: !include schemas/request/login/login.json
+      responses:
+        200:
+          body:
+            application/json:
+              schema: !include schemas/response/login/login.json

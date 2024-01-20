@@ -1,0 +1,17 @@
+server:
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=SpringProject
+    username: sa
+    password: 1234$
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  kafka:
+    bootstrap-servers: localhost:9092, localhost:9093
+tpb:
+  kafka:
+    topic-name: kafka-topic
+    group-id: group-id
+  token:
+    secret: jfKLSJLsdkfjFJSKLDFkajsIOJOIfsdA
+    expriedTime: 300000
