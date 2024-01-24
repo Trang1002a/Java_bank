@@ -16,6 +16,7 @@ import com.example.dbsservice.model.request.account.CheckNameRequest;
 import com.example.dbsservice.model.request.customer.ChangePassword;
 import com.example.dbsservice.model.request.transaction.ConfirmRequest;
 import com.example.dbsservice.model.request.transaction.CreateTransRequest;
+import com.example.dbsservice.model.request.transaction.PhoneRechargeRequest;
 import com.example.dbsservice.model.response.ResStatus;
 import com.example.dbsservice.model.response.account.AccountResponse;
 import com.example.dbsservice.model.response.transaction.CreateTransResponse;
@@ -23,10 +24,7 @@ import com.example.dbsservice.model.response.transaction.TransResponse;
 import com.example.dbsservice.presentation.service.AccountService;
 import com.example.dbsservice.presentation.service.CustomerService;
 import com.example.dbsservice.presentation.service.TransactionService;
-import com.example.dbsservice.utils.Contants;
-import com.example.dbsservice.utils.RequestType;
-import com.example.dbsservice.utils.TransactionStatus;
-import com.example.dbsservice.utils.UserInfoService;
+import com.example.dbsservice.utils.*;
 import com.example.dbsservice.utils.mapper.AccountMapper;
 import com.example.dbsservice.utils.validate.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -59,6 +57,9 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Resource
     UserRepository userRepository;
+
+    @Resource
+    RequestUtils requestUtils;
 
 
     @Override
@@ -122,6 +123,9 @@ public class TransactionServiceImpl implements TransactionService {
                 case CHANGE_PASSWORD:
                     processChangePassword(userInfoDto, requestEntity);
                     break;
+                case PHONE_RECHARGE:
+                    processPhoneRecharge(userInfoDto, requestEntity);
+                    break;
                 default:
                     break;
             }
@@ -131,6 +135,22 @@ public class TransactionServiceImpl implements TransactionService {
             requestRepository.save(requestEntity);
         }
         return new ResStatus(Contants.SUCCESS);
+    }
+
+    private void processPhoneRecharge(UserInfoDto userInfoDto, RequestEntity requestEntity) {
+        PhoneRechargeRequest rqBody = ConvertUtils.fromJson(requestEntity.getRequestBody(), PhoneRechargeRequest.class);
+        Optional<AccountEntity> accountEntity = accountRepository.findByAccountNumberAndStatus(rqBody.getSelectedAccount(), Contants.ACTIVE);
+        if (!accountEntity.isPresent()) {
+            throw new ProjectException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        AccountEntity acc = accountEntity.get();
+        BigDecimal amount = acc.getAmount();
+        BigDecimal amoutRecharge = new BigDecimal(rqBody.getDenomination());
+        BigDecimal result = amount.subtract(amoutRecharge);
+        acc.setAmount(result);
+        accountRepository.save(acc);
+        requestEntity.setStatus(TransactionStatus.SUCCESS.name());
+        requestRepository.save(requestEntity);
     }
 
     private void processChangePassword(UserInfoDto userInfoDto, RequestEntity requestEntity) {
@@ -193,6 +213,19 @@ public class TransactionServiceImpl implements TransactionService {
                 transactionEntity.setAmount(StringUtils.replace(transactionEntity.getAmount(), ".00", ""));
             }).collect(Collectors.toList());
         }
+        return list;
+    }
+
+    @Override
+    public CreateTransResponse phoneRecharge(PhoneRechargeRequest request) {
+        UserInfoDto userInfoDto = UserInfoService.getUserInfo();
+        return requestUtils.responseCreateTrans(userInfoDto, RequestType.PHONE_RECHARGE, request);
+    }
+
+    @Override
+    public List<RequestEntity> getAllRequest() {
+        UserInfoDto userInfoDto = UserInfoService.getUserInfo();
+        List<RequestEntity> list = requestRepository.findByUserIdAndStatusOrderByCreatedDateDesc(userInfoDto.getUserId(), TransactionStatus.SUCCESS.name());
         return list;
     }
 

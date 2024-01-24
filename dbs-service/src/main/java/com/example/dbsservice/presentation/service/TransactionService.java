@@ -1,8 +1,10 @@
 package com.example.dbsservice.presentation.service;
 
+import com.example.dbsservice.model.entity.RequestEntity;
 import com.example.dbsservice.model.entity.TransactionEntity;
 import com.example.dbsservice.model.request.transaction.ConfirmRequest;
 import com.example.dbsservice.model.request.transaction.CreateTransRequest;
+import com.example.dbsservice.model.request.transaction.PhoneRechargeRequest;
 import com.example.dbsservice.model.response.ResStatus;
 import com.example.dbsservice.model.response.transaction.CreateTransResponse;
 import com.example.dbsservice.model.response.transaction.TransResponse;
@@ -16,4 +18,8 @@ public interface TransactionService {
    ResStatus confirm(ConfirmRequest request);
 
     List<TransactionEntity> getAllTransaction(String sourceAccount);
+
+    CreateTransResponse phoneRecharge(PhoneRechargeRequest request);
+
+    List<RequestEntity> getAllRequest();
 }

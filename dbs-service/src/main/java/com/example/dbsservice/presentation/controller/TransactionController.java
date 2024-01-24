@@ -1,14 +1,13 @@
 package com.example.dbsservice.presentation.controller;
 
+import com.example.dbsservice.model.entity.RequestEntity;
 import com.example.dbsservice.model.entity.TransactionEntity;
 import com.example.dbsservice.model.request.transaction.ConfirmRequest;
 import com.example.dbsservice.model.request.transaction.CreateTransRequest;
+import com.example.dbsservice.model.request.transaction.PhoneRechargeRequest;
 import com.example.dbsservice.model.response.ResStatus;
-import com.example.dbsservice.model.response.customer.UserResponse;
 import com.example.dbsservice.model.response.transaction.CreateTransResponse;
-import com.example.dbsservice.model.response.transaction.TransResponse;
 import com.example.dbsservice.presentation.service.TransactionService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -38,6 +37,10 @@ public class TransactionController {
     public CreateTransResponse create(@RequestBody CreateTransRequest request) {
         return transactionService.createTrans(request);
     }
+    @PostMapping("/phoneRecharge")
+    public CreateTransResponse phoneRecharge(@RequestBody PhoneRechargeRequest request) {
+        return transactionService.phoneRecharge(request);
+    }
 
 //    @PostMapping("/create")
 //    public CreateTransResponse create(@RequestBody CreateTransRequest request) {
@@ -52,6 +55,11 @@ public class TransactionController {
     @GetMapping("/{sourceAccount}")
     public List<TransactionEntity> getAllTransaction(@PathVariable("sourceAccount") String sourceAccount) {
         return transactionService.getAllTransaction(sourceAccount);
+    }
+
+    @GetMapping("/getAllRequest")
+    public List<RequestEntity> getAllRequest() {
+        return transactionService.getAllRequest();
     }
 
 //    @PostMapping("/checkNameInternal")

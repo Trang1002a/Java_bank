@@ -17,4 +17,6 @@ public interface AccountRepository extends JpaRepository<AccountEntity, String> 
     Optional<AccountEntity> findFirstByAccountNumberAndStatus(String accountNumber, String status);
 
     List<AccountEntity> findByAccountNumberInAndStatus(List<String> accountNumbers, String status);
+
+    Optional<AccountEntity> findByAccountNumberAndStatus(String accountNumbers, String status);
 }

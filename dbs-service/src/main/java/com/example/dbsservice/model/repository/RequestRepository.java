@@ -11,4 +11,6 @@ import java.util.Optional;
 @Repository
 public interface RequestRepository extends JpaRepository<RequestEntity, String> {
     Optional<RequestEntity> findByIdAndStatus(String id, String status);
+
+    List<RequestEntity> findByUserIdAndStatusOrderByCreatedDateDesc(String userId, String status);
 }
