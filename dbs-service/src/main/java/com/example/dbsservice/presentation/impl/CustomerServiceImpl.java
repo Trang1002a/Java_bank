@@ -4,13 +4,10 @@ import com.example.dbsservice.exception.ErrorCode;
 import com.example.dbsservice.exception.ProjectException;
 import com.example.dbsservice.jwt.PasswordService;
 import com.example.dbsservice.model.dto.UserInfoDto;
-import com.example.dbsservice.model.entity.RequestEntity;
 import com.example.dbsservice.model.entity.UserEntity;
-import com.example.dbsservice.model.repository.RequestRepository;
 import com.example.dbsservice.model.repository.UserRepository;
 import com.example.dbsservice.model.request.customer.ChangePassword;
 import com.example.dbsservice.model.request.customer.UserRequest;
-import com.example.dbsservice.model.request.transaction.CreateTransRequest;
 import com.example.dbsservice.model.response.ResStatus;
 import com.example.dbsservice.model.response.customer.UserResponse;
 import com.example.dbsservice.model.response.transaction.CreateTransResponse;
@@ -18,7 +15,6 @@ import com.example.dbsservice.presentation.service.AccountService;
 import com.example.dbsservice.presentation.service.CustomerService;
 import com.example.dbsservice.utils.*;
 import com.example.dbsservice.utils.mapper.CustomerMapper;
-import com.example.dbsservice.utils.validate.ConvertUtils;
 import com.example.dbsservice.utils.validate.CustomerValidate;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -26,10 +22,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -113,7 +107,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (!PasswordService.matchPassword(changePassword.getOldPassword(), userEntity.get().getPassword())) {
             throw new ProjectException("", "Mật khẩu hiện tại không đúng");
         }
-        return requestUtils.responseCreateTrans(userInfoDto, RequestType.CHANGE_PASSWORD, changePassword);
+        return requestUtils.responseCreateTrans(userInfoDto, FunctionCode.CHANGE_PASSWORD, changePassword);
 
     }
 

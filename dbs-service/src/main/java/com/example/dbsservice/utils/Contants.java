@@ -3,6 +3,7 @@ package com.example.dbsservice.utils;
 public interface Contants {
     String A = "A";
     String ACTIVE = "ACTIVE";
+    String DEACTIVE = "DEACTIVE";
     String USER_ID = "UserId";
     String USER_NAME = "UserName";
     String PHONE_NUMBER = "PhoneNumber";

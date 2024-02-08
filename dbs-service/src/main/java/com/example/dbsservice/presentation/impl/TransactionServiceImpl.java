@@ -4,28 +4,21 @@ import com.example.dbsservice.exception.ErrorCode;
 import com.example.dbsservice.exception.ProjectException;
 import com.example.dbsservice.jwt.PasswordService;
 import com.example.dbsservice.model.dto.UserInfoDto;
-import com.example.dbsservice.model.entity.AccountEntity;
-import com.example.dbsservice.model.entity.RequestEntity;
-import com.example.dbsservice.model.entity.TransactionEntity;
-import com.example.dbsservice.model.entity.UserEntity;
-import com.example.dbsservice.model.repository.AccountRepository;
-import com.example.dbsservice.model.repository.RequestRepository;
-import com.example.dbsservice.model.repository.TransactionRepository;
-import com.example.dbsservice.model.repository.UserRepository;
+import com.example.dbsservice.model.entity.*;
+import com.example.dbsservice.model.repository.*;
 import com.example.dbsservice.model.request.account.CheckNameRequest;
 import com.example.dbsservice.model.request.customer.ChangePassword;
 import com.example.dbsservice.model.request.transaction.ConfirmRequest;
 import com.example.dbsservice.model.request.transaction.CreateTransRequest;
 import com.example.dbsservice.model.request.transaction.PhoneRechargeRequest;
+import com.example.dbsservice.model.request.wallet.WalletLinkRequest;
+import com.example.dbsservice.model.request.wallet.WalletRechargeRequest;
 import com.example.dbsservice.model.response.ResStatus;
 import com.example.dbsservice.model.response.account.AccountResponse;
 import com.example.dbsservice.model.response.transaction.CreateTransResponse;
-import com.example.dbsservice.model.response.transaction.TransResponse;
 import com.example.dbsservice.presentation.service.AccountService;
-import com.example.dbsservice.presentation.service.CustomerService;
 import com.example.dbsservice.presentation.service.TransactionService;
 import com.example.dbsservice.utils.*;
-import com.example.dbsservice.utils.mapper.AccountMapper;
 import com.example.dbsservice.utils.validate.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -60,6 +53,9 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Resource
     RequestUtils requestUtils;
+
+    @Resource
+    WalletLinkRepository walletLinkRepository;
 
 
     @Override
@@ -115,8 +111,8 @@ public class TransactionServiceImpl implements TransactionService {
         }
         RequestEntity requestEntity = requestEntityDB.get();
         try {
-            RequestType requestType = RequestType.valueOf(requestEntity.getRequestType());
-            switch (requestType) {
+            FunctionCode functionCode = FunctionCode.valueOf(requestEntity.getRequestType());
+            switch (functionCode) {
                 case FT_INTERNAL:
                     processInternal(userInfoDto, requestEntity);
                     break;
@@ -125,6 +121,12 @@ public class TransactionServiceImpl implements TransactionService {
                     break;
                 case PHONE_RECHARGE:
                     processPhoneRecharge(userInfoDto, requestEntity);
+                    break;
+                case E_WALLET_LINK:
+                    processEWalletLink(userInfoDto, requestEntity);
+                    break;
+                case E_WALLET_RECHARGE:
+                    processEWalletRecharge(userInfoDto, requestEntity);
                     break;
                 default:
                     break;
@@ -137,12 +139,73 @@ public class TransactionServiceImpl implements TransactionService {
         return new ResStatus(Contants.SUCCESS);
     }
 
+    private void processEWalletRecharge(UserInfoDto userInfoDto, RequestEntity requestEntity) {
+        WalletRechargeRequest rqBody = ConvertUtils.fromJson(requestEntity.getRequestBody(), WalletRechargeRequest.class);
+        Optional<AccountEntity> accountEntity = accountRepository.findByAccountNumberAndStatus(rqBody.getSourceAccount(), Contants.ACTIVE);
+        if (!accountEntity.isPresent()) {
+            throw new ProjectException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        TransactionEntity transactionEntity = new TransactionEntity();
+        transactionEntity.setId(UUID.randomUUID().toString());
+        transactionEntity.setAmount(rqBody.getAmount());
+        transactionEntity.setSourceAccount(rqBody.getSourceAccount());
+        transactionEntity.setStatus(Contants.ACTIVE);
+        transactionEntity.setUserId(userInfoDto.getUserId());
+        transactionEntity.setUserName(userInfoDto.getUserName());
+        transactionEntity.setRequestType(FunctionCode.E_WALLET_RECHARGE.name());
+        transactionEntity.setDescription("Nap tien vi dien tu");
+        transactionEntity.setCreatedDate(new Date(System.currentTimeMillis()));
+        transactionEntity.setUpdatedDate(new Date(System.currentTimeMillis()));
+        AccountEntity acc = accountEntity.get();
+        BigDecimal amount = acc.getAmount();
+        BigDecimal amoutRecharge = new BigDecimal(rqBody.getAmount());
+        BigDecimal result = amount.subtract(amoutRecharge);
+        acc.setAmount(result);
+        accountRepository.save(acc);
+        requestEntity.setStatus(TransactionStatus.SUCCESS.name());
+        requestRepository.save(requestEntity);
+        transactionRepository.save(transactionEntity);
+    }
+
+    private void processEWalletLink(UserInfoDto userInfoDto, RequestEntity requestEntity) {
+        WalletLinkRequest rqBody = ConvertUtils.fromJson(requestEntity.getRequestBody(), WalletLinkRequest.class);
+        String status = StringUtils.equalsIgnoreCase(rqBody.getRequestType(), RequestType.LINK.name()) ? Contants.ACTIVE : Contants.DEACTIVE;
+        Optional<WalletLinkEntity> walletLinkEntity = walletLinkRepository.findAllByWalletIdAndAccountNumber(rqBody.getWalletId(), rqBody.getAccountNumber());
+        if (!walletLinkEntity.isPresent()) {
+            WalletLinkEntity linkEntity = new WalletLinkEntity();
+            linkEntity.setId(UUID.randomUUID().toString());
+            linkEntity.setUserId(userInfoDto.getUserId());
+            linkEntity.setAccountNumber(rqBody.getAccountNumber());
+            linkEntity.setAccountName(rqBody.getAccountName());
+            linkEntity.setWalletId(rqBody.getWalletId());
+            linkEntity.setStatus(status);
+            linkEntity.setCreatedDate(new Date(System.currentTimeMillis()));
+            linkEntity.setUpdatedDate(new Date(System.currentTimeMillis()));
+            walletLinkRepository.save(linkEntity);
+        } else {
+            walletLinkEntity.get().setStatus(status);
+            walletLinkEntity.get().setUpdatedDate(new Date(System.currentTimeMillis()));
+            walletLinkRepository.save(walletLinkEntity.get());
+        }
+    }
+
     private void processPhoneRecharge(UserInfoDto userInfoDto, RequestEntity requestEntity) {
         PhoneRechargeRequest rqBody = ConvertUtils.fromJson(requestEntity.getRequestBody(), PhoneRechargeRequest.class);
         Optional<AccountEntity> accountEntity = accountRepository.findByAccountNumberAndStatus(rqBody.getSelectedAccount(), Contants.ACTIVE);
         if (!accountEntity.isPresent()) {
             throw new ProjectException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
+        TransactionEntity transactionEntity = new TransactionEntity();
+        transactionEntity.setId(UUID.randomUUID().toString());
+        transactionEntity.setAmount(rqBody.getDenomination());
+        transactionEntity.setSourceAccount(rqBody.getSelectedAccount());
+        transactionEntity.setStatus(Contants.ACTIVE);
+        transactionEntity.setUserId(userInfoDto.getUserId());
+        transactionEntity.setUserName(userInfoDto.getUserName());
+        transactionEntity.setRequestType(FunctionCode.PHONE_RECHARGE.name());
+        transactionEntity.setDescription("Nap the dien thoai");
+        transactionEntity.setCreatedDate(new Date(System.currentTimeMillis()));
+        transactionEntity.setUpdatedDate(new Date(System.currentTimeMillis()));
         AccountEntity acc = accountEntity.get();
         BigDecimal amount = acc.getAmount();
         BigDecimal amoutRecharge = new BigDecimal(rqBody.getDenomination());
@@ -151,6 +214,7 @@ public class TransactionServiceImpl implements TransactionService {
         accountRepository.save(acc);
         requestEntity.setStatus(TransactionStatus.SUCCESS.name());
         requestRepository.save(requestEntity);
+        transactionRepository.save(transactionEntity);
     }
 
     private void processChangePassword(UserInfoDto userInfoDto, RequestEntity requestEntity) {
@@ -219,7 +283,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public CreateTransResponse phoneRecharge(PhoneRechargeRequest request) {
         UserInfoDto userInfoDto = UserInfoService.getUserInfo();
-        return requestUtils.responseCreateTrans(userInfoDto, RequestType.PHONE_RECHARGE, request);
+        return requestUtils.responseCreateTrans(userInfoDto, FunctionCode.PHONE_RECHARGE, request);
     }
 
     @Override
@@ -235,7 +299,7 @@ public class TransactionServiceImpl implements TransactionService {
         transactionEntity.setId(UUID.randomUUID().toString());
         transactionEntity.setUserId(userInfoDto.getUserId());
         transactionEntity.setUserName(userInfoDto.getUserName());
-        transactionEntity.setRequestType(RequestType.FT_INTERNAL.name());
+        transactionEntity.setRequestType(FunctionCode.FT_INTERNAL.name());
         transactionEntity.setSourceAccount(rqBody.getSourceAccount());
         transactionEntity.setAmount(rqBody.getAmount());
         transactionEntity.setDebtorAccountNumber(rqBody.getDebtorAccountNumber());
@@ -259,7 +323,7 @@ public class TransactionServiceImpl implements TransactionService {
         RequestEntity requestEntity = new RequestEntity();
         requestEntity.setId(UUID.randomUUID().toString());
         requestEntity.setUserId(userInfoDto.getUserId());
-        requestEntity.setRequestType(RequestType.FT_INTERNAL.name());
+        requestEntity.setRequestType(FunctionCode.FT_INTERNAL.name());
         requestEntity.setRequestBody(ConvertUtils.toJson(request));
         requestEntity.setStatus(TransactionStatus.DRAF.name());
         requestEntity.setOtpId(UUID.randomUUID().toString());

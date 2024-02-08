@@ -27,6 +27,8 @@ public class SecurityConfig {
         securityFilter.addUrlPatterns("/transaction/**");
         securityFilter.addUrlPatterns("/account/**");
         securityFilter.addUrlPatterns("/account/*");
+        securityFilter.addUrlPatterns("/wallet/*");
+        securityFilter.addUrlPatterns("/wallet/**");
         return securityFilter;
     }
 }

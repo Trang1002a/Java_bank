@@ -1,6 +1,9 @@
 server:
   port: 8080
 spring:
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
   datasource:
     url: jdbc:sqlserver://localhost:1433;databaseName=SpringProject
 #    url: jdbc:sqlserver://localhost:1433;databaseName=master
@@ -9,6 +12,11 @@ spring:
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
   kafka:
     bootstrap-servers: localhost:9092, localhost:9093
+    thymeleaf:
+      prefix: classpath:/templates/
+      suffix: .html
+
+
 tpb:
   kafka:
     topic-name: kafka-topic

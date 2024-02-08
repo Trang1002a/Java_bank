@@ -1,0 +1,107 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en" xmlns:th="http://www.thymeleaf.org">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta http-equiv="X-UA-Compatible" content="IE=edge">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>Thymeleaf + REST</title>-->
+<!--</head>-->
+<!--<body>-->
+<!--<div>-->
+<!--    <button onclick="fetchData()">Fetch Data</button>-->
+<!--    <p id="response"></p>-->
+<!--</div>-->
+
+<!--<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>-->
+<!--<script th:inline="javascript">-->
+<!--    function fetchData() {-->
+<!--        var token = "YOUR_ACCESS_TOKEN"; // Replace with your actual token-->
+
+<!--        $.ajax({-->
+<!--            url: 'http://localhost:8080/auth/login',-->
+<!--            type: 'GET',-->
+<!--            headers: {-->
+<!--                'Authorization': 'Bearer ' + token-->
+<!--            },-->
+<!--            success: function (data) {-->
+<!--                $('#response').text(data);-->
+<!--            },-->
+<!--            error: function () {-->
+<!--                $('#response').text('Error fetching data');-->
+<!--            }-->
+<!--        });-->
+<!--    }-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Form</title>
+</head>
+<body>
+
+<h2>Login Form</h2>
+
+<form id="loginForm" onsubmit="submitForm(event)">
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+
+    <br>
+
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+
+    <br>
+
+    <button type="submit">Login</button>
+</form>
+
+<script>
+    function submitForm(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        // Get the form data
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        // Create an object with the data
+        const formData = {
+            userName: username,
+            password: password
+        };
+
+        // Make a POST request to the API
+        fetch('http://localhost:8080/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+                // Add any additional headers, such as authorization token if needed
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Login failed');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Handle successful login response
+                console.log('Login successful', data);
+            })
+            .catch(error => {
+                // Handle login error
+                console.error('Login error', error);
+            });
+    }
+</script>
+
+</body>
+</html>
